@@ -12,7 +12,7 @@ output:
 This is my PM566 Final Project website. 
 <br>
 
-```{r setup, message=FALSE, echo=FALSE, warning=FALSE}
+```{r setup1, message=FALSE, echo=FALSE, warning=FALSE}
 
 library(data.table)
 library(tidyverse)
@@ -108,3 +108,227 @@ p1_scatter
 p2_scatter
 ```
 
+
+## Assignment 5 {.tabset}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r, include = FALSE}
+library(data.table)
+library(dtplyr)
+library(dplyr)
+library(lubridate)
+library(leaflet)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(lubridate)
+library(qwraps2)
+library(plotly)
+```
+```{r, include = FALSE}
+# read in the datasets
+all_data <- data.table::fread("/Users/apple1/Desktop/USC\ Biostatistics/PM566/HW/PM566\ Midterm\ Project/data/Crime_Data_from_2020_to_Present.csv")
+bul <- all_data[which(all_data$'Crm Cd Desc' == 'BURGLARY')]
+```
+
+
+```{r, include = FALSE}
+# check the dimensions, headers and footers
+dim(bul)
+head(bul)
+tail(bul)
+
+# check the variable names and variable types
+str(bul)
+
+#Assign and combine desenct name to desenct code
+bul$`Vict Descent`[bul$`Vict Descent`=='A'] <- 'Asian'
+bul$`Vict Descent`[bul$`Vict Descent`=='B'] <- 'Black'
+bul$`Vict Descent`[bul$`Vict Descent`=='C'] <- 'Asian'
+bul$`Vict Descent`[bul$`Vict Descent`=='D'] <- 'Asian'
+bul$`Vict Descent`[bul$`Vict Descent`=='F'] <- 'Asian'
+bul$`Vict Descent`[bul$`Vict Descent`=='G'] <- 'Guamanian'
+bul$`Vict Descent`[bul$`Vict Descent`=='H'] <- 'Hispanic/Latin'
+bul$`Vict Descent`[bul$`Vict Descent`=='I'] <- 'AIAN'
+bul$`Vict Descent`[bul$`Vict Descent`=='J'] <- 'Asian'
+bul$`Vict Descent`[bul$`Vict Descent`=='K'] <- 'Asian'
+bul$`Vict Descent`[bul$`Vict Descent`=='L'] <- 'Asian'
+bul$`Vict Descent`[bul$`Vict Descent`=='O'] <- 'Other'
+bul$`Vict Descent`[bul$`Vict Descent`=='P'] <- 'Pacific Islander'
+bul$`Vict Descent`[bul$`Vict Descent`=='S'] <- 'Samoan'
+bul$`Vict Descent`[bul$`Vict Descent`=='U'] <- 'Hawaiian'
+bul$`Vict Descent`[bul$`Vict Descent`=='V'] <- 'Asian'
+bul$`Vict Descent`[bul$`Vict Descent`=='W'] <- 'White'
+bul$`Vict Descent`[bul$`Vict Descent`=='Z'] <- 'Asian'
+
+# transform character to date and extract month from occurance date
+bul$`DATE OCC` <- as.Date(substr(bul$`DATE OCC`,1,10),"%m/%d/%Y")
+bul$month_occurance <- month(bul$`DATE OCC`)
+
+# take a closer look at the key variables. 
+
+# check the `Vict Age`, `Vict Sex` and `Vict Descent` variables.
+summary(bul$`Vict Age`)
+table(bul$`Vict Sex`)
+table(bul$`Vict Descent`)
+
+# check how many Geographic Areas in LA has been evaluated 
+length(unique(bul$AREA))
+length(unique(bul$`AREA NAME`))
+
+# check the range of lattitude and longitude.
+summary(bul$LAT)
+summary(bul$LON)
+
+```
+
+```{r, include = FALSE}
+# check for missing values
+age_mv <- sum(bul$`Vict Sex`=='') + sum(bul$`Vict Sex`=='X')
+age_mv/length(bul$`Vict Sex`)
+
+des_mv <- sum(bul$`Vict Descent`=='') + sum(bul$`Vict Descent`=='X')
+des_mv/length(bul$`Vict Descent`)
+
+# check for impausible values and its proportion
+sum(bul$`Vict Age`== 0)
+sum(bul$`Vict Age`== 0)/length(bul$`Vict Age`)
+
+sum(bul$LAT== 0)
+sum(bul$LAT== 0)/length(bul$LAT)
+sum(bul$LON== 0)/length(bul$LON)
+
+# remove the missing and impausible values
+bul <- bul[which(bul$`Vict Sex`!='')]
+bul <- bul[which(bul$`Vict Sex`!='X')]
+bul <- bul[which(bul$`Vict Descent`!='')]
+bul <- bul[which(bul$`Vict Descent`!='X')]
+
+bul <- bul[which(bul$`Vict Age`!=0)]
+summary(bul$`Vict Age`)
+
+bul <- bul[which(bul$LAT!=0)]
+bul <- bul[which(bul$LON!=0)]
+summary(bul$LAT)
+summary(bul$LON)
+```
+
+### Boxplot for age
+```{r, echo = FALSE, out.width = "588", out.height = "378",warning=FALSE}
+p<-ggplot(bul,aes(y=`Vict Age`))+geom_boxplot()
+ggplotly(p)
+```
+
+### Barchart for sex
+```{r,  echo = FALSE, out.width = "588", out.height = "378",warning=FALSE}
+p <- ggplot(bul,aes(x =`Vict Sex`)) + geom_bar(stat = 'count', fill = 'lightblue', colour = 'darkblue') + labs(title = "Numbers by sex")
+ggplotly(p)
+```
+
+### Barchart for descent
+```{r,  echo = FALSE, out.width = "588", out.height = "378",warning=FALSE}
+p<-ggplot(bul,aes(x =`Vict Descent`)) + geom_bar(stat = 'count', fill = 'lightpink', colour = 'darkred') + labs(title = "Numbers by descent")
+ggplotly(p)
+```
+
+### Boxplot for age by sex
+```{r,  echo = FALSE, out.width = "588", out.height = "378",warning=FALSE}
+p<-ggplot(bul,aes(x=factor(`Vict Sex`),y=`Vict Age`))+geom_boxplot() 
+ggplotly(p)
+```
+
+### Boxplot for age by descent
+```{r, echo = FALSE, out.width = "588", out.height = "378",warning=FALSE}
+p<-ggplot(bul,aes(x=factor(`Vict Descent`),y=`Vict Age`))+geom_boxplot() 
+ggplotly(p)
+```
+
+### Barchart for sex by descent
+```{r, echo = FALSE, out.width = "588", out.height = "378",warning=FALSE}
+p<-ggplot(bul,mapping = aes(x = `Vict Descent`, fill = `Vict Sex`))+
+  geom_bar()+
+  labs(title = "Vict Descent Category by Sex")+
+  scale_fill_brewer(palette = "Set3")
+ggplotly(p)
+```
+
+### Barchart for AREA
+```{r, echo = FALSE, out.width = "588", out.height = "378",warning=FALSE}
+p<-ggplot(bul,aes(x =AREA)) + geom_bar(stat = 'count', fill = 'lightyellow', colour = 'orange') + labs(title = "Numbers by Area")
+ggplotly(p)
+```
+
+### Leaflet for gender
+```{r, echo = FALSE,warning=FALSE}
+colorplot <- if_else(bul$`Vict Sex`=="F","red","blue")
+leaflet(bul) %>%
+  addProviderTiles('OpenStreetMap') %>%
+  addCircles(lat=~LAT, lng=~LON, radius = 0.01, color = colorplot, fillColor = colorplot ) 
+```
+
+### Line plot for occurace date except for October -- total
+```{r, echo = FALSE,warning=FALSE}
+
+bul1 <- bul[which(bul$month_occurance!=10)]
+
+p<-ggplot(bul1,aes(x =month_occurance)) + geom_line(stat = 'count') +geom_point(stat = 'count')+scale_x_continuous(breaks=seq(0, 9, 1)) 
+ggplotly(p)
+```
+### Line plot for occurace date except for October -- by gender
+```{r,echo = FALSE,warning=FALSE}
+p<-ggplot(bul1,aes(x =month_occurance, color = `Vict Sex`)) + geom_line(stat = 'count') +geom_point(stat = 'count')+scale_x_continuous(breaks=seq(0, 9, 1)) 
+ggplotly(p)
+```
+
+### Line plot for occurace date except for October -- by descent
+```{r,echo = FALSE,warning=FALSE}
+p<-ggplot(bul1,aes(x =month_occurance, group=`Vict Descent`, color = `Vict Descent`)) + geom_line(stat = 'count') +geom_point(stat = 'count')+scale_x_continuous(breaks=seq(0, 9, 1)) 
+ggplotly(p)
+```
+
+### Line plot for occurace date except for October -- by area
+```{r,echo = FALSE,warning=FALSE}
+p <- ggplot(bul1,aes(x =month_occurance, group=`AREA NAME`, color = `AREA NAME`)) + geom_line(stat = 'count') +geom_point(stat = 'count')+scale_x_continuous(breaks=seq(0, 9, 1)) 
+
+ggplotly(p)
+```
+
+### Summary table for age, sex and descent
+```{r, results = "asis", echo = FALSE, warning=FALSE}
+
+options(qwraps2_markup = "markdown")
+
+summary1 <-
+  list("Victim Age" =
+       list("min"       = ~ min(`Vict Age`),
+            "max"       = ~ max(`Vict Age`),
+            "mean (sd)" = ~ qwraps2::mean_sd(`Vict Age`)),
+       
+       "Victim Gender" =
+       list("Male" = ~ qwraps2::n_perc0(`Vict Sex` == 'M'),
+            "Female"  = ~ qwraps2::n_perc0(`Vict Sex` == 'F'))
+       )
+whole <- summary_table(bul, summary1, by = c("Vict Descent"))
+whole
+```
+
+### Summary table for area and time
+```{r, results = "asis", echo = FALSE, warning=FALSE}
+bul$area_all <- paste0(bul$AREA,': ',bul$`AREA NAME`)
+
+area_t <- xtabs(~area_all + month_occurance,data=bul)
+area <- as.data.frame(cbind(area_t, total = margin.table(area_t,1)))
+setDT(area, keep.rownames = TRUE)
+
+library(DT)
+areatb <- area %>%  select(rn,`1`,`2`,`3`,`4`,`5`,`6`,`7`,`8`,`9`,`10`, total)
+datatable(areatb)
+
+
+#kable(area, "html") %>%
+#  kable_styling(bootstrap_options = c("striped", "hover"))
+
+```
